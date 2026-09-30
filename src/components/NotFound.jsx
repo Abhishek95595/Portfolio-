@@ -7,7 +7,6 @@ export default function NotFound() {
 
   return (
     <div className="not-found-wrapper">
-      <div className="bg-grid-pattern" aria-hidden="true"></div>
       <div className="container not-found-container">
         <div className="not-found-card card-base">
           <div className="not-found-badge">

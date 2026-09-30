@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Production build output
+dist/
+dist-ssr/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE / System
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

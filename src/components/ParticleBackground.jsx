@@ -1,19 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export default function ParticleBackground() {
-  const canvasRef = useRef(null);
-  const [smokeUrl, setSmokeUrl] = useState('');
+  const smokeCanvasRef = useRef(null);
+  const dustCanvasRef = useRef(null);
 
   useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    const w = isMobile ? 256 : 1024;
-    const h = isMobile ? 128 : 512;
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
+    let idleId = null;
+    let timeoutId = null;
 
-    if (ctx) {
+    const generateSmoke = () => {
+      const smokeCanvas = smokeCanvasRef.current;
+      if (!smokeCanvas) return;
+
+      const isMobile = window.innerWidth < 640;
+      const w = isMobile ? 512 : 1024;
+      const h = isMobile ? 256 : 512;
+
+      smokeCanvas.width = w;
+      smokeCanvas.height = h;
+
+      const ctx = smokeCanvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.fillStyle = '#050608';
+      ctx.fillRect(0, 0, w, h);
+
       const imgData = ctx.createImageData(w, h);
       const data = imgData.data;
 
@@ -64,7 +75,7 @@ export default function ParticleBackground() {
         let val = 0;
         let amp = 0.5;
         let freq = 1.0;
-        for (let o = 0; o < 3; o++) {
+        for (let o = 0; o < 4; o++) {
           val += amp * noise(x * freq, y * freq);
           freq *= 2.05;
           amp *= 0.5;
@@ -72,34 +83,76 @@ export default function ParticleBackground() {
         return val;
       };
 
-      let idx = 0;
       const sx = 0.0035;
       const sy = 0.0035;
+      let currentY = 0;
 
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const qx = fbm(x * sx, y * sy);
-          const qy = fbm((x + 100) * sx, (y + 100) * sy);
-          const n = fbm((x + qx * 120) * sx, (y + qy * 120) * sy);
+      const stepSlice = (deadline) => {
+        const startTime = performance.now();
+        while (currentY < h) {
+          const y = currentY;
+          let idx = y * w * 4;
+          for (let x = 0; x < w; x++) {
+            const qx = fbm(x * sx, y * sy);
+            const qy = fbm((x + 100) * sx, (y + 100) * sy);
+            const n = fbm((x + qx * 120) * sx, (y + qy * 120) * sy);
 
-          const norm = Math.min(Math.max((n + 0.4) / 1.4, 0), 1);
-          const lum = Math.floor(5 + norm * (38 - 5));
+            const norm = Math.min(Math.max((n + 0.4) / 1.4, 0), 1);
+            const r = Math.floor(5 + norm * (42 - 5));
+            const g = Math.floor(6 + norm * (44 - 6));
+            const b = Math.floor(8 + norm * (49 - 8));
 
-          data[idx] = lum;
-          data[idx + 1] = lum + 2;
-          data[idx + 2] = lum + 4;
-          data[idx + 3] = 255;
-          idx += 4;
+            data[idx] = r;
+            data[idx + 1] = g;
+            data[idx + 2] = b;
+            data[idx + 3] = 255;
+            idx += 4;
+          }
+          currentY++;
+
+          const elapsed = performance.now() - startTime;
+          const timeRemaining = deadline && typeof deadline.timeRemaining === 'function' ? deadline.timeRemaining() : 10;
+          if (elapsed >= 8 || timeRemaining < 2) {
+            break;
+          }
         }
-      }
 
-      ctx.putImageData(imgData, 0, 0);
-      setSmokeUrl(canvas.toDataURL('image/png'));
-    }
+        ctx.putImageData(imgData, 0, 0);
+
+        if (currentY < h) {
+          if ('requestIdleCallback' in window) {
+            idleId = window.requestIdleCallback(stepSlice, { timeout: 100 });
+          } else {
+            timeoutId = setTimeout(stepSlice, 1);
+          }
+        } else {
+          if (typeof window !== 'undefined' && window.__TEST_ENV__) {
+            window.smokeFinished = true;
+          }
+        }
+      };
+
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(stepSlice, { timeout: 100 });
+      } else {
+        timeoutId = setTimeout(stepSlice, 1);
+      }
+    };
+
+    generateSmoke();
+
+    return () => {
+      if (idleId && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = dustCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -134,8 +187,8 @@ export default function ParticleBackground() {
     }
 
     const initSpecks = () => {
-      const isMobile = width < 768;
-      const count = isMobile ? 40 : 140;
+      const isMobile = width < 640;
+      const count = isMobile ? 70 : 150;
       specks = [];
 
       for (let i = 0; i < count; i++) {
@@ -155,12 +208,14 @@ export default function ParticleBackground() {
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
 
+      ctx.scale(dpr, dpr);
       initSpecks();
 
       if (prefersReducedMotion) {
@@ -168,12 +223,14 @@ export default function ParticleBackground() {
       }
     };
 
+    const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+
     const handleMouseMove = (e) => {
-      if (isTouch || width < 768) return;
+      if (isTouch || !isFinePointer || width < 1024) return;
       const cx = width / 2;
       const cy = height / 2;
-      mouse.targetX = ((e.clientX - cx) / cx) * 6;
-      mouse.targetY = ((e.clientY - cy) / cy) * 6;
+      mouse.targetX = Math.max(-8, Math.min(8, ((e.clientX - cx) / cx) * 8));
+      mouse.targetY = Math.max(-8, Math.min(8, ((e.clientY - cy) / cy) * 8));
     };
 
     const handleTouch = () => {
@@ -185,7 +242,7 @@ export default function ParticleBackground() {
     const drawFrame = () => {
       ctx.clearRect(0, 0, width, height);
 
-      if (!prefersReducedMotion && width >= 768) {
+      if (!prefersReducedMotion && isFinePointer && width >= 1024) {
         mouse.x += (mouse.targetX - mouse.x) * 0.05;
         mouse.y += (mouse.targetY - mouse.y) * 0.05;
       } else {
@@ -195,6 +252,8 @@ export default function ParticleBackground() {
 
       ctx.save();
       ctx.translate(mouse.x, mouse.y);
+
+      const buckets = Array.from({ length: 10 }, () => []);
 
       const len = specks.length;
       for (let i = 0; i < len; i++) {
@@ -214,11 +273,24 @@ export default function ParticleBackground() {
 
         const alphaFactor = prefersReducedMotion
           ? s.baseAlpha
-          : Math.max(0.1, s.baseAlpha + Math.sin(s.twinklePhase) * 0.2);
+          : Math.max(0.15, Math.min(0.7, s.baseAlpha + Math.sin(s.twinklePhase) * 0.2));
 
-        ctx.fillStyle = `rgba(240, 246, 255, ${alphaFactor})`;
+        const bucketIdx = Math.min(9, Math.floor(alphaFactor * 10));
+        buckets[bucketIdx].push(s);
+      }
+
+      for (let b = 0; b < 10; b++) {
+        const group = buckets[b];
+        if (group.length === 0) continue;
+
+        const a = ((b + 0.5) / 10).toFixed(2);
+        ctx.fillStyle = `rgba(240, 246, 255, ${a})`;
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        for (let i = 0; i < group.length; i++) {
+          const s = group[i];
+          ctx.moveTo(s.x + s.radius, s.y);
+          ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        }
         ctx.fill();
       }
 
@@ -261,18 +333,20 @@ export default function ParticleBackground() {
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener('change', handleMotionChange);
       } else if (mediaQuery.addListener) {
-        mediaQuery.addListener(handleMotionChange);
+        mediaQuery.removeEventListener('change', handleMotionChange);
       }
     };
   }, []);
 
   return (
     <>
-      <div className="smoke-layer-container" aria-hidden="true">
-        {smokeUrl && <img src={smokeUrl} className="smoke-layer-img" alt="" />}
-      </div>
       <canvas
-        ref={canvasRef}
+        ref={smokeCanvasRef}
+        className="smoke-canvas"
+        aria-hidden="true"
+      />
+      <canvas
+        ref={dustCanvasRef}
         className="dust-canvas"
         aria-hidden="true"
       />

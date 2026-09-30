@@ -1,6 +1,18 @@
-/* ==========================================================================
-   Design System & Tokens — Abhishek Verma Portfolio
-   ========================================================================== */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url('/fonts/outfit-latin.woff2') format('woff2');
+}
 
 :root {
   --bg-dark: #0b0f17;
@@ -15,8 +27,9 @@
 
   --accent-cyan: #06b6d4;
   --accent-cyan-subtle: rgba(6, 182, 212, 0.12);
-  --accent-blue: #3b82f6;
-  --accent-blue-subtle: rgba(59, 130, 246, 0.12);
+  --accent-blue: #1d4ed8;
+  --accent-blue-text: #60a5fa;
+  --accent-blue-subtle: rgba(29, 78, 216, 0.18);
   --accent-emerald: #10b981;
   --accent-emerald-subtle: rgba(16, 185, 129, 0.12);
   --accent-violet: #8b5cf6;
@@ -41,8 +54,8 @@
   --space-64: 64px;
 
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #8899ac;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   --text-inverse: #0b0f17;
 
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -79,7 +92,7 @@ html {
   scroll-padding-top: calc(var(--nav-height) + 1.5rem);
   color-scheme: dark;
   font-family: var(--font-sans);
-  background-color: var(--bg-dark);
+  background-color: #050608;
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -90,7 +103,7 @@ html {
 body {
   min-height: 100vh;
   line-height: 1.6;
-  background-color: var(--bg-dark);
+  background-color: transparent;
   overflow-x: hidden;
   position: relative;
 }
@@ -147,22 +160,15 @@ button {
   background: none;
 }
 
-.smoke-layer-container {
+.smoke-canvas {
   position: fixed;
   inset: -10%;
-  width: 120%;
-  height: 120%;
+  width: 120vw;
+  height: 120vh;
   z-index: -3;
   pointer-events: none;
-  overflow: hidden;
   background-color: #050608;
-}
-
-.smoke-layer-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.65;
+  opacity: 0.75;
   will-change: transform;
   animation: smokeMove 75s ease-in-out infinite alternate;
 }
@@ -172,16 +178,16 @@ button {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(4vw, 3vh, 0) scale(1.08);
+    transform: translate3d(-2%, 2%, 0) scale(1.04);
   }
   100% {
-    transform: translate3d(-3vw, -4vh, 0) scale(1.04);
+    transform: translate3d(2%, -2%, 0) scale(1.08);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .smoke-layer-img {
-    animation: none;
+  .smoke-canvas {
+    animation: none !important;
     will-change: auto;
   }
 }
@@ -315,16 +321,16 @@ button {
 }
 
 .btn-primary {
-  background-color: #2563eb;
+  background-color: #1d4ed8;
   color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: #1e40af;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.4);
 }
 
 .btn-secondary {
@@ -468,7 +474,7 @@ button {
   border-radius: var(--radius-sm);
   background-color: var(--accent-blue-subtle);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  color: var(--accent-blue);
+  color: #60a5fa;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.9375rem;
@@ -601,7 +607,7 @@ button {
 .mobile-nav-link:hover,
 .mobile-nav-link:focus-visible {
   background-color: var(--bg-surface-hover);
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
 }
 
 
@@ -916,7 +922,7 @@ button {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #cbd5e1;
 }
 
 .pillar-title {
@@ -979,7 +985,7 @@ button {
 
 .exp-company {
   font-weight: 600;
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
 }
 
 .dot-sep {
@@ -1033,7 +1039,7 @@ button {
 }
 
 .bullet-icon {
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
   font-weight: bold;
 }
 
@@ -1322,7 +1328,7 @@ button {
 .sec-card-subtitle {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
   margin-top: 0.25rem;
 }
 
@@ -1386,7 +1392,7 @@ button {
 .map-meta-chip {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
   background-color: var(--accent-blue-subtle);
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-xs);
@@ -1635,7 +1641,7 @@ button {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
   background-color: var(--accent-blue-subtle);
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-xs);
@@ -1975,7 +1981,7 @@ button {
 }
 
 .social-link-item:hover {
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
 }
 
 /* Footer */
@@ -2052,7 +2058,7 @@ button {
 }
 
 .footer-links-row a:hover {
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
 }
 
 /* ==========================================================================
@@ -2253,7 +2259,7 @@ button {
   font-size: 5rem;
   font-weight: 800;
   line-height: 1;
-  color: var(--accent-blue);
+  color: var(--accent-blue-text);
   letter-spacing: -0.04em;
   margin-top: 0.5rem;
 }
