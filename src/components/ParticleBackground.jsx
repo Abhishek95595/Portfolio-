@@ -1,28 +1,116 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function ParticleBackground() {
   const canvasRef = useRef(null);
+  const [smokeUrl, setSmokeUrl] = useState('');
+
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    const w = isMobile ? 256 : 1024;
+    const h = isMobile ? 128 : 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      const imgData = ctx.createImageData(w, h);
+      const data = imgData.data;
+
+      const p = new Uint8Array(256);
+      for (let i = 0; i < 256; i++) p[i] = i;
+      for (let i = 255; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = p[i];
+        p[i] = p[j];
+        p[j] = temp;
+      }
+      const perm = new Uint8Array(512);
+      for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+
+      const grad2 = [
+        [1, 1], [-1, 1], [1, -1], [-1, -1],
+        [1, 0], [-1, 0], [0, 1], [0, -1]
+      ];
+
+      const dot = (g, x, y) => g[0] * x + g[1] * y;
+      const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+
+      const noise = (x, y) => {
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+        const xf = x - Math.floor(x);
+        const yf = y - Math.floor(y);
+
+        const u = fade(xf);
+        const v = fade(yf);
+
+        const gi00 = perm[X + perm[Y]] % 8;
+        const gi01 = perm[X + perm[Y + 1]] % 8;
+        const gi10 = perm[X + 1 + perm[Y]] % 8;
+        const gi11 = perm[X + 1 + perm[Y + 1]] % 8;
+
+        const n00 = dot(grad2[gi00], xf, yf);
+        const n10 = dot(grad2[gi10], xf - 1, yf);
+        const n01 = dot(grad2[gi01], xf, yf - 1);
+        const n11 = dot(grad2[gi11], xf - 1, yf - 1);
+
+        const nx0 = n00 + u * (n10 - n00);
+        const nx1 = n01 + u * (n11 - n01);
+        return nx0 + v * (nx1 - nx0);
+      };
+
+      const fbm = (x, y) => {
+        let val = 0;
+        let amp = 0.5;
+        let freq = 1.0;
+        for (let o = 0; o < 3; o++) {
+          val += amp * noise(x * freq, y * freq);
+          freq *= 2.05;
+          amp *= 0.5;
+        }
+        return val;
+      };
+
+      let idx = 0;
+      const sx = 0.0035;
+      const sy = 0.0035;
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const qx = fbm(x * sx, y * sy);
+          const qy = fbm((x + 100) * sx, (y + 100) * sy);
+          const n = fbm((x + qx * 120) * sx, (y + qy * 120) * sy);
+
+          const norm = Math.min(Math.max((n + 0.4) / 1.4, 0), 1);
+          const lum = Math.floor(5 + norm * (38 - 5));
+
+          data[idx] = lum;
+          data[idx + 1] = lum + 2;
+          data[idx + 2] = lum + 4;
+          data[idx + 3] = 255;
+          idx += 4;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      setSmokeUrl(canvas.toDataURL('image/png'));
+    }
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let animId = null;
     let width = 0;
     let height = 0;
-    let dpr = 1;
-    let particles = [];
+    let specks = [];
     let isTouch = false;
 
-    const pointer = {
-      x: null,
-      y: null,
-      radius: 160,
-    };
-
+    const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let prefersReducedMotion = mediaQuery.matches;
 
@@ -45,56 +133,21 @@ export default function ParticleBackground() {
       mediaQuery.addListener(handleMotionChange);
     }
 
-    const computed = getComputedStyle(document.documentElement);
-    const accentCyan = computed.getPropertyValue('--accent-cyan').trim() || '#06b6d4';
-    const accentBlue = computed.getPropertyValue('--accent-blue').trim() || '#3b82f6';
-
-    const parseHexToRgb = (hex) => {
-      const sanitized = hex.replace('#', '');
-      if (sanitized.length === 3) {
-        const r = parseInt(sanitized[0] + sanitized[0], 16);
-        const g = parseInt(sanitized[1] + sanitized[1], 16);
-        const b = parseInt(sanitized[2] + sanitized[2], 16);
-        return { r, g, b };
-      }
-      if (sanitized.length === 6) {
-        const r = parseInt(sanitized.slice(0, 2), 16);
-        const g = parseInt(sanitized.slice(2, 4), 16);
-        const b = parseInt(sanitized.slice(4, 6), 16);
-        return { r, g, b };
-      }
-      return { r: 6, g: 182, b: 212 };
-    };
-
-    const rgbCyan = parseHexToRgb(accentCyan);
-    const rgbBlue = parseHexToRgb(accentBlue);
-
-    let pulses = [];
-
-    const initParticles = () => {
-      const area = width * height;
+    const initSpecks = () => {
       const isMobile = width < 768;
-      const calculated = Math.floor(area / 24000);
-      const targetCount = isMobile
-        ? Math.min(Math.max(calculated, 20), 35)
-        : Math.min(Math.max(calculated, 35), 65);
+      const count = isMobile ? 40 : 140;
+      specks = [];
 
-      particles = [];
-      pulses = [];
-      for (let i = 0; i < targetCount; i++) {
-        const isCyan = Math.random() > 0.35;
-        const color = isCyan ? rgbCyan : rgbBlue;
-        const radius = isMobile ? Math.random() * 1.0 + 1.0 : Math.random() * 1.5 + 1.2;
-        const speed = isMobile ? 0.35 : 0.55;
-
-        particles.push({
+      for (let i = 0; i < count; i++) {
+        specks.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * speed,
-          vy: (Math.random() - 0.5) * speed,
-          radius,
-          color,
-          alpha: Math.random() * 0.4 + 0.3,
+          radius: Math.random() * 1.1 + 0.5,
+          baseAlpha: Math.random() * 0.55 + 0.15,
+          twinkleSpeed: Math.random() * 0.02 + 0.01,
+          twinklePhase: Math.random() * Math.PI * 2,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: (Math.random() - 0.5) * 0.18 - 0.04,
         });
       }
     };
@@ -102,188 +155,74 @@ export default function ParticleBackground() {
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
+      canvas.width = width;
+      canvas.height = height;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      initParticles();
+      initSpecks();
 
       if (prefersReducedMotion) {
         drawFrame();
       }
     };
 
-    const handlePointerMove = (e) => {
-      if (isTouch) return;
-      pointer.x = e.clientX;
-      pointer.y = e.clientY;
+    const handleMouseMove = (e) => {
+      if (isTouch || width < 768) return;
+      const cx = width / 2;
+      const cy = height / 2;
+      mouse.targetX = ((e.clientX - cx) / cx) * 6;
+      mouse.targetY = ((e.clientY - cy) / cy) * 6;
     };
 
-    const handlePointerLeave = () => {
-      pointer.x = null;
-      pointer.y = null;
-    };
-
-    const handleTouchStart = () => {
+    const handleTouch = () => {
       isTouch = true;
-      pointer.x = null;
-      pointer.y = null;
+      mouse.targetX = 0;
+      mouse.targetY = 0;
     };
 
     const drawFrame = () => {
       ctx.clearRect(0, 0, width, height);
 
-      const maxDistance = 130;
-      const maxDistanceSq = maxDistance * maxDistance;
-      const mouseDistSq = pointer.radius * pointer.radius;
-      const pLen = particles.length;
+      if (!prefersReducedMotion && width >= 768) {
+        mouse.x += (mouse.targetX - mouse.x) * 0.05;
+        mouse.y += (mouse.targetY - mouse.y) * 0.05;
+      } else {
+        mouse.x = 0;
+        mouse.y = 0;
+      }
 
-      const lineBuckets = { 1: [], 2: [], 3: [] };
-      const activeConnections = [];
+      ctx.save();
+      ctx.translate(mouse.x, mouse.y);
 
-      for (let i = 0; i < pLen; i++) {
-        const p1 = particles[i];
+      const len = specks.length;
+      for (let i = 0; i < len; i++) {
+        const s = specks[i];
 
         if (!prefersReducedMotion) {
-          if (pointer.x !== null && pointer.y !== null && !isTouch) {
-            const dxm = pointer.x - p1.x;
-            const dym = pointer.y - p1.y;
-            const distSqM = dxm * dxm + dym * dym;
+          s.twinklePhase += s.twinkleSpeed;
+          s.x += s.vx;
+          s.y += s.vy;
 
-            if (distSqM < mouseDistSq && distSqM > 1) {
-              const distM = Math.sqrt(distSqM);
-              const factor = (1 - distM / pointer.radius) * 0.035;
-              p1.vx += (dxm / distM) * factor;
-              p1.vy += (dym / distM) * factor;
+          if (s.x < 0) s.x = width;
+          else if (s.x > width) s.x = 0;
 
-              lineBuckets[3].push(p1.x, p1.y, pointer.x, pointer.y);
-            }
-          }
-
-          p1.vx *= 0.99;
-          p1.vy *= 0.99;
-
-          p1.x += p1.vx;
-          p1.y += p1.vy;
-
-          if (p1.x - p1.radius <= 0) {
-            p1.x = p1.radius;
-            p1.vx = -p1.vx;
-          } else if (p1.x + p1.radius >= width) {
-            p1.x = width - p1.radius;
-            p1.vx = -p1.vx;
-          }
-
-          if (p1.y - p1.radius <= 0) {
-            p1.y = p1.radius;
-            p1.vy = -p1.vy;
-          } else if (p1.y + p1.radius >= height) {
-            p1.y = height - p1.radius;
-            p1.vy = -p1.vy;
-          }
+          if (s.y < 0) s.y = height;
+          else if (s.y > height) s.y = 0;
         }
 
-        ctx.fillStyle = `rgba(${p1.color.r}, ${p1.color.g}, ${p1.color.b}, ${p1.alpha})`;
+        const alphaFactor = prefersReducedMotion
+          ? s.baseAlpha
+          : Math.max(0.1, s.baseAlpha + Math.sin(s.twinklePhase) * 0.2);
+
+        ctx.fillStyle = `rgba(240, 246, 255, ${alphaFactor})`;
         ctx.beginPath();
-        ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
         ctx.fill();
-
-        for (let j = i + 1; j < pLen; j++) {
-          const p2 = particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const distSq = dx * dx + dy * dy;
-
-          if (distSq < maxDistanceSq) {
-            activeConnections.push({ p1, p2 });
-            const ratio = 1 - distSq / maxDistanceSq;
-            if (ratio > 0.5) {
-              lineBuckets[2].push(p1.x, p1.y, p2.x, p2.y);
-            } else {
-              lineBuckets[1].push(p1.x, p1.y, p2.x, p2.y);
-            }
-          }
-        }
       }
 
-      ctx.lineWidth = 0.75;
-      
-      if (lineBuckets[1].length > 0) {
-        ctx.strokeStyle = `rgba(${rgbCyan.r}, ${rgbCyan.g}, ${rgbCyan.b}, 0.08)`;
-        ctx.beginPath();
-        for (let k = 0; k < lineBuckets[1].length; k += 4) {
-          ctx.moveTo(lineBuckets[1][k], lineBuckets[1][k + 1]);
-          ctx.lineTo(lineBuckets[1][k + 2], lineBuckets[1][k + 3]);
-        }
-        ctx.stroke();
-      }
-
-      if (lineBuckets[2].length > 0) {
-        ctx.strokeStyle = `rgba(${rgbCyan.r}, ${rgbCyan.g}, ${rgbCyan.b}, 0.18)`;
-        ctx.beginPath();
-        for (let k = 0; k < lineBuckets[2].length; k += 4) {
-          ctx.moveTo(lineBuckets[2][k], lineBuckets[2][k + 1]);
-          ctx.lineTo(lineBuckets[2][k + 2], lineBuckets[2][k + 3]);
-        }
-        ctx.stroke();
-      }
-
-      if (lineBuckets[3].length > 0) {
-        ctx.strokeStyle = `rgba(${rgbCyan.r}, ${rgbCyan.g}, ${rgbCyan.b}, 0.32)`;
-        ctx.lineWidth = 0.85;
-        ctx.beginPath();
-        for (let k = 0; k < lineBuckets[3].length; k += 4) {
-          ctx.moveTo(lineBuckets[3][k], lineBuckets[3][k + 1]);
-          ctx.lineTo(lineBuckets[3][k + 2], lineBuckets[3][k + 3]);
-        }
-        ctx.stroke();
-      }
-
-      if (!prefersReducedMotion) {
-        const maxPulses = width < 768 ? 2 : 3;
-        for (let k = pulses.length - 1; k >= 0; k--) {
-          const pulse = pulses[k];
-          pulse.progress += pulse.speed;
-
-          const dx = pulse.p1.x - pulse.p2.x;
-          const dy = pulse.p1.y - pulse.p2.y;
-          if (pulse.progress >= 1 || (dx * dx + dy * dy) > maxDistanceSq) {
-            pulses.splice(k, 1);
-            continue;
-          }
-
-          const px = pulse.p1.x + (pulse.p2.x - pulse.p1.x) * pulse.progress;
-          const py = pulse.p1.y + (pulse.p2.y - pulse.p1.y) * pulse.progress;
-          const alpha = Math.sin(pulse.progress * Math.PI) * 0.7;
-
-          ctx.fillStyle = `rgba(${pulse.color.r}, ${pulse.color.g}, ${pulse.color.b}, ${alpha * 0.25})`;
-          ctx.beginPath();
-          ctx.arc(px, py, 3, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = `rgba(${pulse.color.r}, ${pulse.color.g}, ${pulse.color.b}, ${alpha})`;
-          ctx.beginPath();
-          ctx.arc(px, py, 1.5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        if (pulses.length < maxPulses && activeConnections.length > 0) {
-          const conn = activeConnections[Math.floor(Math.random() * activeConnections.length)];
-          const isCyan = Math.random() > 0.4;
-          pulses.push({
-            p1: conn.p1,
-            p2: conn.p2,
-            progress: 0,
-            speed: Math.random() * 0.01 + 0.006,
-            color: isCyan ? rgbCyan : rgbBlue,
-          });
-        }
-      }
+      ctx.restore();
     };
 
     const loop = () => {
@@ -303,62 +242,40 @@ export default function ParticleBackground() {
     };
 
     window.addEventListener('resize', resize, { passive: true });
-    window.addEventListener('mousemove', handlePointerMove, { passive: true });
-    window.addEventListener('mouseleave', handlePointerLeave, { passive: true });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('touchstart', handleTouch, { passive: true });
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    let idleId = null;
-    let timerId = null;
-
-    const startCanvas = () => {
-      resize();
-      if (!prefersReducedMotion) {
-        animId = requestAnimationFrame(loop);
-      }
-    };
-
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(startCanvas, { timeout: 100 });
-    } else {
-      timerId = setTimeout(startCanvas, 50);
+    resize();
+    if (!prefersReducedMotion) {
+      animId = requestAnimationFrame(loop);
     }
 
     return () => {
-      if (idleId && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timerId) {
-        clearTimeout(timerId);
-      }
-      if (animId) {
-        cancelAnimationFrame(animId);
-      }
+      if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', handlePointerMove);
-      window.removeEventListener('mouseleave', handlePointerLeave);
-      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchstart', handleTouch);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
 
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener('change', handleMotionChange);
-      } else if (mediaQuery.removeListener) {
-        mediaQuery.removeListener(handleMotionChange);
+      } else if (mediaQuery.addListener) {
+        mediaQuery.addListener(handleMotionChange);
       }
     };
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-        pointerEvents: 'none',
-        display: 'block',
-      }}
-    />
+    <>
+      <div className="smoke-layer-container" aria-hidden="true">
+        {smokeUrl && <img src={smokeUrl} className="smoke-layer-img" alt="" />}
+      </div>
+      <canvas
+        ref={canvasRef}
+        className="dust-canvas"
+        aria-hidden="true"
+      />
+    </>
   );
 }

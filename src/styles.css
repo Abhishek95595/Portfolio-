@@ -147,128 +147,73 @@ button {
   background: none;
 }
 
-/* Fluid Mechanics / Vector Field Animated Background Layer */
-.fluid-background-container {
+.smoke-layer-container {
   position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: -10%;
+  width: 120%;
+  height: 120%;
+  z-index: -3;
   pointer-events: none;
-  z-index: 0;
   overflow: hidden;
-  background-color: #07090e;
-  background: radial-gradient(ellipse 90% 70% at 50% -10%, #0d131f 0%, #07090e 65%, #050609 100%);
+  background-color: #050608;
 }
 
-.fluid-background-canvas {
-  position: absolute;
-  inset: 0;
+.smoke-layer-img {
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  display: block;
-}
-
-/* Subtle organic ambient depth luminescence */
-.fluid-ambient-depth {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: 
-    radial-gradient(circle 600px at 75% 25%, rgba(0, 163, 142, 0.035), transparent 75%),
-    radial-gradient(circle 500px at 20% 65%, rgba(8, 183, 162, 0.025), transparent 70%);
-  mix-blend-mode: screen;
-}
-
-.aurora-glow {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.12;
+  object-fit: cover;
+  opacity: 0.65;
   will-change: transform;
+  animation: smokeMove 75s ease-in-out infinite alternate;
 }
 
-.aurora-blob.blob-1 {
-  top: -10vw;
-  left: -10vw;
-  width: 50vw;
-  height: 50vw;
-  max-width: 600px;
-  max-height: 600px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.45), transparent 70%);
-  animation: auroraMove1 34s ease-in-out infinite alternate;
-}
-
-.aurora-blob.blob-2 {
-  bottom: -10vw;
-  right: -10vw;
-  width: 55vw;
-  height: 55vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.4), transparent 70%);
-  animation: auroraMove2 38s ease-in-out infinite alternate;
-}
-
-@keyframes auroraMove1 {
+@keyframes smokeMove {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4vw, 3vh, 0) scale(1.08);
   }
   100% {
-    transform: translate3d(20vw, 15vh, 0);
-  }
-}
-
-@keyframes auroraMove2 {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    transform: translate3d(-18vw, -20vh, 0);
+    transform: translate3d(-3vw, -4vh, 0) scale(1.04);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora-blob {
+  .smoke-layer-img {
     animation: none;
     will-change: auto;
   }
 }
 
-.bg-grid-pattern {
+.dust-canvas {
   position: fixed;
   inset: 0;
+  z-index: -2;
   pointer-events: none;
+  display: block;
+}
+
+.bg-vignette {
+  position: fixed;
+  inset: 0;
   z-index: -1;
-  background-image: 
-    linear-gradient(to right, rgba(30, 41, 59, 0.20) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 41, 59, 0.20) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
-  -webkit-mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
-  opacity: 0.85;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 35%, rgba(5, 6, 8, 0.75) 100%);
 }
 
 .bg-grain-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
-  opacity: 0.035;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 .site-wrapper {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;

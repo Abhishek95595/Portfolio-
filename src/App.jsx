@@ -106,12 +106,8 @@ export default function App() {
   if (isNotFound) {
     return (
       <>
-        <div className="aurora-glow" aria-hidden="true">
-          <div className="aurora-blob blob-1" />
-          <div className="aurora-blob blob-2" />
-        </div>
-        <div className="bg-grid-pattern" aria-hidden="true" />
         <ParticleBackground />
+        <div className="bg-vignette" aria-hidden="true" />
         <div className="bg-grain-overlay" aria-hidden="true" />
         <NotFound />
       </>
@@ -123,12 +119,8 @@ export default function App() {
       <a href="#main-content" className="skip-to-content">
         Skip to main content
       </a>
-      <div className="aurora-glow" aria-hidden="true">
-        <div className="aurora-blob blob-1" />
-        <div className="aurora-blob blob-2" />
-      </div>
-      <div className="bg-grid-pattern" aria-hidden="true" />
       <ParticleBackground />
+      <div className="bg-vignette" aria-hidden="true" />
       <div className="bg-grain-overlay" aria-hidden="true" />
       <div className="site-wrapper">
         <Navbar activeSection={activeSection} />
