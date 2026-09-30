@@ -45,7 +45,7 @@ export default function Navbar({ activeSection }) {
     <>
       <header className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
         <div className="container navbar-inner">
-          <a href="#top" className="nav-brand" aria-label="Abhishek Verma Home">
+          <a href="#top" className="nav-brand">
             <span className="brand-badge">AV</span>
             <span className="brand-name">{personalInfo.name}</span>
           </a>
@@ -64,6 +64,15 @@ export default function Navbar({ activeSection }) {
           </nav>
 
           <div className="nav-actions-desktop">
+            <a
+              href="/resume.pdf"
+              download
+              className="btn btn-secondary btn-sm"
+              aria-label="Download Resume PDF"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Resume</span>
+            </a>
             <a
               href={personalInfo.github}
               target="_blank"
@@ -111,7 +120,6 @@ export default function Navbar({ activeSection }) {
                 href="#top"
                 className="nav-brand"
                 onClick={() => setMobileMenuOpen(false)}
-                aria-label="Abhishek Verma Home"
               >
                 <span className="brand-badge">AV</span>
                 <span className="brand-name">{personalInfo.name}</span>
@@ -137,6 +145,14 @@ export default function Navbar({ activeSection }) {
               ))}
             </nav>
             <div className="mobile-drawer-footer">
+              <a
+                href="/resume.pdf"
+                download
+                className="btn btn-secondary btn-full"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Download Resume PDF 📥
+              </a>
               <a
                 href={personalInfo.github}
                 target="_blank"

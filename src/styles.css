@@ -8,7 +8,7 @@
   --bg-surface: #111726;
   --bg-surface-hover: #161e31;
   --bg-elevated: #1a2337;
-  --bg-card: rgba(17, 23, 38, 0.75);
+  --bg-card: rgba(17, 23, 38, 0.88);
 
   --border-subtle: #1e293b;
   --border-medium: #2d3d59;
@@ -25,7 +25,7 @@
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #8899ac;
   --text-inverse: #0b0f17;
 
   /* Typography */
@@ -64,6 +64,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-height) + 1.5rem);
   color-scheme: dark;
   font-family: var(--font-sans);
   background-color: var(--bg-dark);
@@ -77,6 +78,28 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   background-color: var(--bg-dark);
+}
+
+/* Accessibility: Skip to Content link */
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 1.5rem;
+  z-index: 9999;
+  padding: 0.75rem 1.25rem;
+  background-color: var(--accent-blue);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: top var(--transition-fast);
+}
+
+.skip-to-content:focus {
+  top: 1rem;
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
 }
 
 /* Focus styles */
@@ -97,23 +120,128 @@ button {
   background: none;
 }
 
-/* Background Grid Pattern */
+/* Fluid Mechanics / Vector Field Animated Background Layer */
+.fluid-background-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background-color: #07090e;
+  background: radial-gradient(ellipse 90% 70% at 50% -10%, #0d131f 0%, #07090e 65%, #050609 100%);
+}
+
+.fluid-background-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+}
+
+/* Subtle organic ambient depth luminescence */
+.fluid-ambient-depth {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle 600px at 75% 25%, rgba(0, 163, 142, 0.035), transparent 75%),
+    radial-gradient(circle 500px at 20% 65%, rgba(8, 183, 162, 0.025), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+.aurora-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  will-change: transform;
+}
+
+.aurora-blob.blob-1 {
+  top: -10vw;
+  left: -10vw;
+  width: 50vw;
+  height: 50vw;
+  max-width: 600px;
+  max-height: 600px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.45), transparent 70%);
+  animation: auroraMove1 34s ease-in-out infinite alternate;
+}
+
+.aurora-blob.blob-2 {
+  bottom: -10vw;
+  right: -10vw;
+  width: 55vw;
+  height: 55vw;
+  max-width: 650px;
+  max-height: 650px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.4), transparent 70%);
+  animation: auroraMove2 38s ease-in-out infinite alternate;
+}
+
+@keyframes auroraMove1 {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(20vw, 15vh, 0);
+  }
+}
+
+@keyframes auroraMove2 {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-18vw, -20vh, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob {
+    animation: none;
+    will-change: auto;
+  }
+}
+
 .bg-grid-pattern {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   background-image: 
-    linear-gradient(to right, rgba(30, 41, 59, 0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 41, 59, 0.25) 1px, transparent 1px);
+    linear-gradient(to right, rgba(30, 41, 59, 0.20) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 41, 59, 0.20) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
   -webkit-mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
+  opacity: 0.85;
+}
+
+.bg-grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 .site-wrapper {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -215,15 +343,16 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--accent-blue);
+  background-color: #2563eb;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 .btn-primary:hover {
-  background-color: #2563eb;
+  background-color: #1d4ed8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
 }
 
 .btn-secondary {
@@ -287,26 +416,26 @@ button {
 
 .tech-badge.cyan {
   background-color: var(--accent-cyan-subtle);
-  color: var(--accent-cyan);
-  border-color: rgba(6, 182, 212, 0.25);
+  color: #22d3ee;
+  border-color: rgba(6, 182, 212, 0.3);
 }
 
 .tech-badge.blue {
   background-color: var(--accent-blue-subtle);
-  color: var(--accent-blue);
-  border-color: rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .tech-badge.emerald {
   background-color: var(--accent-emerald-subtle);
-  color: var(--accent-emerald);
-  border-color: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .tech-badge.violet {
   background-color: var(--accent-violet-subtle);
-  color: var(--accent-violet);
-  border-color: rgba(139, 92, 246, 0.25);
+  color: #c084fc;
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
 /* Card Surface Base */
@@ -315,7 +444,6 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   transition: all var(--transition-normal);
-  backdrop-filter: blur(8px);
 }
 
 .card-base:hover {
@@ -742,7 +870,7 @@ button {
 
 .node-sub {
   font-size: 0.6875rem;
-  color: var(--text-muted);
+  color: #94a3b8;
 }
 
 /* ==========================================================================
@@ -2050,5 +2178,109 @@ button {
 
 .not-found-actions {
   margin-top: 1rem;
+}
+
+/* ==========================================================================
+   Hero Interactive Cursor Spotlight Glow
+   ========================================================================== */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, -9999px) var(--mouse-y, -9999px),
+    rgba(6, 182, 212, 0.08),
+    rgba(59, 130, 246, 0.03) 40%,
+    transparent 70%
+  );
+  transition: opacity 300ms ease;
+  opacity: 0;
+}
+
+.hero-spotlight.active {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Hero Staggered Fade-Up Reveal (Pure CSS)
+   ========================================================================== */
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-fade-1 {
+  animation: heroFadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-fade-2 {
+  opacity: 0;
+  animation: heroFadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+}
+
+.hero-fade-3 {
+  opacity: 0;
+  animation: heroFadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards;
+}
+
+.hero-fade-4 {
+  opacity: 0;
+  animation: heroFadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) 360ms forwards;
+}
+
+.hero-fade-5 {
+  opacity: 0;
+  animation: heroFadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) 480ms forwards;
+}
+
+.hero-fade-visual {
+  opacity: 0;
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+
+/* ==========================================================================
+   Scroll Reveal for Sections (IntersectionObserver)
+   ========================================================================== */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-spotlight {
+    display: none !important;
+  }
+
+  .hero-fade-1,
+  .hero-fade-2,
+  .hero-fade-3,
+  .hero-fade-4,
+  .hero-fade-5,
+  .hero-fade-visual,
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
