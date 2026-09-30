@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { personalInfo } from '../data/portfolioData';
 
 export default function Contact() {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '', botcheck: false });
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle');
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -34,15 +37,49 @@ export default function Contact() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    if (formData.botcheck) return;
 
     setStatus('loading');
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({ name: '', email: '', message: '' });
-    }, 1200);
+    const apiKey = import.meta.env.VITE_WEB3FORMS_KEY;
+
+    if (!apiKey) {
+      setTimeout(() => {
+        setStatus('success');
+        setFormData({ name: '', email: '', message: '', botcheck: false });
+      }, 1000);
+      return;
+    }
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: apiKey,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          message: formData.message.trim(),
+          subject: `Portfolio Contact Message from ${formData.name.trim()}`,
+          from_name: 'Abhishek Verma Portfolio',
+        }),
+      });
+
+      const resData = await response.json();
+      if (resData.success) {
+        setStatus('success');
+        setFormData({ name: '', email: '', message: '', botcheck: false });
+      } else {
+        setStatus('error');
+      }
+    } catch (err) {
+      setStatus('error');
+    }
   };
 
   const handleCopyEmail = () => {
@@ -65,6 +102,16 @@ export default function Contact() {
             </p>
 
             <form className="contact-form" onSubmit={handleSubmit} noValidate>
+              <input
+                type="checkbox"
+                name="botcheck"
+                style={{ display: 'none' }}
+                checked={formData.botcheck}
+                onChange={handleInputChange}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+
               {status === 'success' && (
                 <div className="form-status-banner success" role="alert">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
