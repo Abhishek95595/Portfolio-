@@ -32,30 +32,45 @@ export default function App() {
 
 
   useEffect(() => {
-    let ticking = false;
+    if (typeof window === 'undefined') return;
 
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const sections = ['top', 'about', 'experience', 'projects', 'skills', 'education', 'contact'];
-          const scrollPos = window.scrollY + 200;
+    const sections = document.querySelectorAll('section[id]');
+    if (!sections.length) return;
 
-          for (let i = sections.length - 1; i >= 0; i--) {
-            const sec = document.getElementById(sections[i]);
-            if (sec && sec.offsetTop <= scrollPos) {
-              setActiveSection(sections[i]);
-              break;
-            }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (window.scrollY < 120) {
+          setActiveSection('top');
+          return;
+        }
+
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
           }
-          ticking = false;
         });
-        ticking = true;
+      },
+      {
+        rootMargin: '-40% 0px -55% 0px',
+        threshold: 0,
+      }
+    );
+
+    sections.forEach((sec) => observer.observe(sec));
+
+    const handleTopScroll = () => {
+      if (window.scrollY < 120) {
+        setActiveSection('top');
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('scroll', handleTopScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleTopScroll);
+    };
+  }, [isNotFound]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;

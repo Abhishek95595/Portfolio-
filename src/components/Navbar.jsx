@@ -137,7 +137,7 @@ export default function Navbar({ activeSection }) {
                 <a
                   key={link.href}
                   href={link.href}
-                  className="mobile-nav-link"
+                  className={`mobile-nav-link ${activeSection === link.href.slice(1) ? 'active' : ''}`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
