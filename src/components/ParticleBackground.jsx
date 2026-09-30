@@ -245,7 +245,7 @@ export default function ParticleBackground() {
       }
 
       if (!prefersReducedMotion) {
-        const maxPulses = width < 768 ? 3 : 6;
+        const maxPulses = width < 768 ? 2 : 3;
         for (let k = pulses.length - 1; k >= 0; k--) {
           const pulse = pulses[k];
           pulse.progress += pulse.speed;
@@ -259,16 +259,16 @@ export default function ParticleBackground() {
 
           const px = pulse.p1.x + (pulse.p2.x - pulse.p1.x) * pulse.progress;
           const py = pulse.p1.y + (pulse.p2.y - pulse.p1.y) * pulse.progress;
-          const alpha = Math.sin(pulse.progress * Math.PI) * 0.95;
+          const alpha = Math.sin(pulse.progress * Math.PI) * 0.7;
 
-          ctx.fillStyle = `rgba(${pulse.color.r}, ${pulse.color.g}, ${pulse.color.b}, ${alpha * 0.35})`;
+          ctx.fillStyle = `rgba(${pulse.color.r}, ${pulse.color.g}, ${pulse.color.b}, ${alpha * 0.25})`;
           ctx.beginPath();
-          ctx.arc(px, py, 4, 0, Math.PI * 2);
+          ctx.arc(px, py, 3, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = `rgba(${pulse.color.r}, ${pulse.color.g}, ${pulse.color.b}, ${alpha})`;
           ctx.beginPath();
-          ctx.arc(px, py, 2, 0, Math.PI * 2);
+          ctx.arc(px, py, 1.5, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -279,7 +279,7 @@ export default function ParticleBackground() {
             p1: conn.p1,
             p2: conn.p2,
             progress: 0,
-            speed: Math.random() * 0.012 + 0.008,
+            speed: Math.random() * 0.01 + 0.006,
             color: isCyan ? rgbCyan : rgbBlue,
           });
         }
