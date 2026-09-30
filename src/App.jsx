@@ -39,36 +39,44 @@ export default function App() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (window.scrollY < 120) {
+        const scrollY = window.scrollY;
+        if (scrollY < 120) {
           setActiveSection('top');
           return;
         }
+        if (window.innerHeight + scrollY >= document.body.scrollHeight - 2) {
+          setActiveSection('contact');
+          return;
+        }
 
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
+        const visibleEntries = entries.filter((e) => e.isIntersecting);
+        if (visibleEntries.length > 0) {
+          visibleEntries.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          setActiveSection(visibleEntries[0].target.id);
+        }
       },
       {
-        rootMargin: '-40% 0px -55% 0px',
-        threshold: 0,
+        rootMargin: '-25% 0px -45% 0px',
+        threshold: [0, 0.1, 0.25, 0.5],
       }
     );
 
     sections.forEach((sec) => observer.observe(sec));
 
-    const handleTopScroll = () => {
-      if (window.scrollY < 120) {
+    const handleScrollEdgeCases = () => {
+      const scrollY = window.scrollY;
+      if (scrollY < 120) {
         setActiveSection('top');
+      } else if (window.innerHeight + scrollY >= document.body.scrollHeight - 2) {
+        setActiveSection('contact');
       }
     };
 
-    window.addEventListener('scroll', handleTopScroll, { passive: true });
+    window.addEventListener('scroll', handleScrollEdgeCases, { passive: true });
 
     return () => {
       observer.disconnect();
-      window.removeEventListener('scroll', handleTopScroll);
+      window.removeEventListener('scroll', handleScrollEdgeCases);
     };
   }, [isNotFound]);
 
