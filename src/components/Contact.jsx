@@ -46,10 +46,14 @@ export default function Contact() {
     const apiKey = import.meta.env.VITE_WEB3FORMS_KEY;
 
     if (!apiKey) {
-      setTimeout(() => {
-        setStatus('success');
-        setFormData({ name: '', email: '', message: '', botcheck: false });
-      }, 1000);
+      if (import.meta.env.DEV) {
+        setTimeout(() => {
+          setStatus('success');
+          setFormData({ name: '', email: '', message: '', botcheck: false });
+        }, 1000);
+      } else {
+        setStatus('error');
+      }
       return;
     }
 
